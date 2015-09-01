@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 use v5.23;
-use lib '/home/gduhamel/Projet/TreshReboot/lib';
+use lib '/home/gduhamel/Projet/ThreshReboot/lib';
 use VerySimpleLog;
 
 BEGIN
@@ -19,11 +19,12 @@ sub coucou
 {
     my $l = VerySimpleLog->instance();
     $l->log();
+    return (TRUE);
 }
 
 sub Main
 {
-    my $file = "/home/gduhamel/Projet/TreshReboot/etc/vsl.ini";
+    my $file = "/home/gduhamel/Projet/ThreshReboot/etc/vsl.ini";
     my $l = VerySimpleLog->instance(INI => $file);
     coucou();
 }

@@ -1,13 +1,13 @@
 package VerySimpleLog;
 use strict;
 use warnings;
-use List::Util qw (any);
+use List::Util qw(any);
 use File::Temp qw(tempdir);
-use Config::Tiny;
+use Config::Tiny qw(read);
 use Moo;
 with 'MooX::Singleton';
 
-use lib '/home/gduhamel/Projet/AKB/Linux/LIB';
+use lib '/home/gduhamel/Projet/ThreshReboot/lib';
 use Natixis::GenericFunction qw(GetSysTime IsValidFile IsValidPath);
 
 has INI => (is => 'ro', required => 1);
@@ -15,7 +15,6 @@ has config => (is => 'rw');
 
 BEGIN
 {
-
     use constant FALSE => 0;
     use constant TRUE  => 1;
 }
