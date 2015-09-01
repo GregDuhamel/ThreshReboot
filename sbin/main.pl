@@ -23,7 +23,9 @@ sub coucou
 
 sub Main
 {
-    my $l = VerySimpleLog->new("INIFILE");
+    my $file = "/home/gduhamel/Projet/TreshReboot/etc/vsl.ini";
+    my $l = VerySimpleLog->instance(INI => $file);
+    coucou();
 }
 
 Main();
