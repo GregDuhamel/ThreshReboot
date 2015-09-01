@@ -20,22 +20,15 @@ BEGIN
     use constant TRUE  => 1;
 }
 
-sub BUILDARGS
-{
-    my ($class, %args) = @_;
-
-    my $INI = $args{INI};
-
-    unless (IsValidFile($INI))
-    {
-        delete $args{INI};
-    }
-    return (\%args);
-}
-
 sub BUILD
 {
-    my $self = @_;
+    my ($self) = @_;
+
+    unless (IsValidFile($self->{'INI'}))
+    {
+        die print(
+            "ERROR : No valid INI configuration file found. Doesn't exists or can't be read. \n");
+    }
 
     $self->_config();
     $self->_init();
@@ -45,7 +38,7 @@ sub BUILD
 
 sub _config
 {
-    my $self = @_;
+    my ($self) = @_;
 
     my $configuration = Config::Tiny->read($self->{INI}, 'utf8')
       or die sprintf(
@@ -53,26 +46,26 @@ sub _config
         $self->{INI});
 
     unless (exists $configuration->{'Global'}
-            && $configuration->{Global} =~ /File|Output|Database|ALL/i)
+            && $configuration->{Global}->{Logger} =~ /File|Output|Database|ALL/i)
     {
         print STDERR
           "[WARN] Error reading Global section in $self->{INI} file. Will use Standard Output by default. \n";
         $configuration->{Global} = "Output";
         $configuration->{Output}->{LogLevel} = "ALL";
     }
-    
+
     $self->config($configuration);
-    
+
     return (TRUE);
 }
 
 sub _init
 {
-    my $self = @_;
+    my ($self) = @_;
 
-    if ($self->config->{Global} =~ /ALL/i)
+    if ($self->config->{Global}->{Logger} =~ /ALL/i)
     {
-        $self->config->{Global} = "File,Output,Database";
+        $self->config->{Global}->{Logger} = "File,Output,Database";
     }
 
     my @ConfigOutput = split(',', $self->config->{Global});
@@ -122,17 +115,17 @@ sub log
 {
     my ($self, $type, $message) = @_;
 
-    unless($type && $message)
-	{
-		return(FALSE);
-	}
-   
+    unless ($type && $message)
+    {
+        return (FALSE);
+    }
+
     return (TRUE);
 }
 
 sub _getLogTime
 {
-    my $self = @_;
+    my ($self) = @_;
 
     unless ($self->_setLogTime())
     {
@@ -143,7 +136,7 @@ sub _getLogTime
 
 sub _setLogTime
 {
-    my $self = @_;
+    my ($self) = @_;
 
     _setLastLogTime();
 
@@ -158,7 +151,7 @@ sub _setLogTime
 
 sub _setLastLogTime
 {
-    my $self = @_;
+    my ($self) = @_;
 
     unless ($self->{LogTime})
     {
@@ -172,7 +165,7 @@ sub _setLastLogTime
 
 sub _getLastLogTime
 {
-    my $self = @_;
+    my ($self) = @_;
 
     unless ($self->{LastLogTime})
     {
