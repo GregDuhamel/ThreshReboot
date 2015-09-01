@@ -27,7 +27,8 @@ sub BUILD
     unless (IsValidFile($self->{'INI'}))
     {
         die print(
-            "ERROR : No valid INI configuration file found. Doesn't exists or can't be read. \n");
+            "ERROR : No valid INI configuration file found. Doesn't exists or can't be read. \n"
+        );
     }
 
     $self->_config();
@@ -46,7 +47,7 @@ sub _config
         $self->{INI});
 
     unless (exists $configuration->{'Global'}
-            && $configuration->{Global}->{Logger} =~ /File|Output|Database|ALL/i)
+           && $configuration->{Global}->{Logger} =~ /File|Output|Database|ALL/i)
     {
         print STDERR
           "[WARN] Error reading Global section in $self->{INI} file. Will use Standard Output by default. \n";
