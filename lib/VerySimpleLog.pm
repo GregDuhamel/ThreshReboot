@@ -174,10 +174,4 @@ sub _getLastLogTime
     return ($self->{LastLogTime});
 }
 
-END
-{
-    my ($package, $filename, $line) = caller();
-    print "Clean $package.\n";
-}
-
 1;

@@ -12,7 +12,8 @@ BEGIN
 
 END
 {
-    print "END.\n";
+    my ($package, $filename, $line) = caller();
+    print "Clean $package.\n";
 }
 
 sub coucou
