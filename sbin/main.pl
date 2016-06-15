@@ -2,6 +2,7 @@ use strict;
 use warnings;
 use v5.25;
 use Log::Log4perl qw(:easy);
+use Log::Log4perl::Level;
 use Getopt::Long;
 use Pod::Usage;
 use Data::Dumper;
@@ -9,7 +10,6 @@ use lib '/home/gduhamel/Projet/Perl/ThreshReboot/lib/';
 use Natixis::GenericFunction;
 
 BEGIN {
-	Log::Log4perl->easy_init($DEBUG);
 	use constant FALSE => 0;
 	use constant TRUE  => 1;
 }
@@ -25,7 +25,7 @@ sub ParsingArguments {
 	my $Options;
 	Getopt::Long::GetOptions(
 		"conf|f=s"   => \$Options->{Configuration},
-		"loglevel=i" => \$Options->{LogLevel},
+		"loglevel=s" => \$Options->{LogLevel},
 		'help!'      => \$Options->{Help},
 		'man!'       => \$Options->{Man},
 		'version'    => \$Options->{Version}
@@ -52,7 +52,9 @@ sub ParsingArguments {
 	}
 
 	if ( defined $Options->{LogLevel} ) {
-		if ( $Options->{LogLevel} =~ /INFO|WARN|ERROR|DEBUG|TRACE/i ) {
+		if ( $Options->{LogLevel} =~ /FATAL|WARN|OFF|INFO|DEBUG|ERROR|ALL|TRACE/i ) {
+			my $Level = Log::Log4perl::Level::to_priority( $Options->{LogLevel} );
+			Log::Log4perl->easy_init( $Level );
 			$logger->info(
 				"LogLevel $Options->{LogLevel} defined for this run.");
 		}
@@ -78,9 +80,9 @@ sub ParsingArguments {
 }
 
 sub Main {
+	my $Options = ParsingArguments();
 	my $logger = Log::Log4perl->get_logger();
 	$logger->info("Parsing arguments from command line.");
-	my $Options = ParsingArguments();
 	$logger->info("Arguments parsed.");
 	$logger->info("Parsing YAML file.");
 	my $YAML =
@@ -90,7 +92,7 @@ sub Main {
 		exit(1);
 	}
 	$logger->info("YAML file : $Options->{Configuration} parsed successfully.");
-	$logger->debug(Data::Dumper::Dumper($YAML->[0]));
+	$logger->debug( Data::Dumper::Dumper( $YAML->[0] ) );
 	exit(0);
 }
 
