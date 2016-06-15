@@ -1,0 +1,30 @@
+invoice: 34843
+date-format: Batchdate
+srm-database: 
+    host: msocelot.cib.fr
+    port: 1040
+    instance: SX_TP_FR
+    database: msbdb_sumotc
+ship-to: 322
+hedge:
+    jobid:
+        - name        : hedge_credit
+          priority    : 4
+          description : Hedge credit avec GridLib toto
+          progression:
+                - percent : 30
+                  hour    : 0100
+                - percent : 60
+                  hour    : 0300
+        - name        : hedge_sdr_otc_x86
+          priority    : 4
+          description : Hedge paris avec GridLib toto
+          progression:
+                - percent : 30
+                  hour    : 0100
+                - percent : 60
+                  hour    : 0300
+comments: >
+    Late afternoon is best.
+    Backup contact is Nancy
+    Billsmer @ 338-4338.
