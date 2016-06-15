@@ -1,4 +1,4 @@
-Light and New Threshold
+Light and New ThresholdCheck on Hedge/PnL/Feed
 ===
 Specl
 --------------------------------------------------------------------------------
@@ -10,18 +10,25 @@ are probably a lot of things that don't yet work.
 
 Usage
 --------------------------------------------------------------------------------
+Options:
+    --configuration | -f
+                  Configuration file associated with this program (YAML). Mandatory
 
- VerySimpleLog :
+    --loglevel
+                  Log Level to apply to this program.
 
-Work with a light INI Config file that contains :
+    --help | -h
+                  Show the help output.
 
- - LogDir	: Not Mandatory - your logdir path.
- - LogFile	: Not Mandatory - your logfile name.
- - LogLevel 	: Should be INFO/DEBUG/WARN/ERROR.
- - Output 	: Mandatory - Should be FILE for a file and STD for the standard output/error. (DB option to log in database coming soon).
+    --man
+                  Give a complete man page for this program.
 
+    --version
+                  Print Modules, Perl, OS and Program information.
 Example
 --------------------------------------------------------------------------------
+Usage:
+    main.pl -f config.yml [Options]
 
 To Do
 --------------------------------------------------------------------------------
