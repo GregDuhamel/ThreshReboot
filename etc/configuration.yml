@@ -8,17 +8,19 @@ srm-database:
 ship-to: 322
 hedge:
     jobid:
-        - name        : hedge_credit
+        - name        : hedge_stress_exact
+          table       : stress
           priority    : 4
-          description : Hedge credit avec GridLib toto
+          description : Stress exact avec GridLib PROD
           progression:
                 - percent : 30
                   hour    : 0100
                 - percent : 60
                   hour    : 0300
         - name        : hedge_sdr_otc_x86
+          table       : hedge
           priority    : 4
-          description : Hedge paris avec GridLib toto
+          description : Hedge paris avec GridLib PROD
           progression:
                 - percent : 30
                   hour    : 0100

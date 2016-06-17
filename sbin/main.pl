@@ -21,7 +21,7 @@ END {
 }
 
 sub ParsingArguments {
-	my $logger = Log::Log4perl->get_logger();
+	my $logger;
 	my $Options;
 	Getopt::Long::GetOptions(
 		"conf|f=s"   => \$Options->{Configuration},
@@ -51,18 +51,19 @@ sub ParsingArguments {
 		exit(0);
 	}
 
-	if ( defined $Options->{LogLevel} ) {
-		if ( $Options->{LogLevel} =~ /FATAL|WARN|OFF|INFO|DEBUG|ERROR|ALL|TRACE/i ) {
-			my $Level = Log::Log4perl::Level::to_priority( $Options->{LogLevel} );
-			Log::Log4perl->easy_init( $Level );
-			$logger->info(
-				"LogLevel $Options->{LogLevel} defined for this run.");
-		}
-		else {
-			$logger->warn(
-"LogLevel $Options->{LogLevel}, provided in the command line is not recognize. Fault back to default (DEBUG)."
-			);
-		}
+	if ( defined $Options->{LogLevel}
+		&& $Options->{LogLevel} =~
+		/FATAL|WARN|OFF|INFO|DEBUG|ERROR|ALL|TRACE/i )
+	{
+		my $Level = Log::Log4perl::Level::to_priority( $Options->{LogLevel} );
+		Log::Log4perl->easy_init($Level);
+		$logger = Log::Log4perl->get_logger();
+		$logger->info("LogLevel $Options->{LogLevel} defined for this run.");
+	}
+	else {
+		Log::Log4perl->easy_init($INFO);
+		$logger = Log::Log4perl->get_logger();
+		$logger->info("Default LogLevel INFO defined for this run.");
 	}
 
 	if ( defined $Options->{Configuration}
@@ -81,7 +82,7 @@ sub ParsingArguments {
 
 sub Main {
 	my $Options = ParsingArguments();
-	my $logger = Log::Log4perl->get_logger();
+	my $logger  = Log::Log4perl->get_logger();
 	$logger->info("Parsing arguments from command line.");
 	$logger->info("Arguments parsed.");
 	$logger->info("Parsing YAML file.");
@@ -108,7 +109,7 @@ main.pl -f config.cfg [Options]
 
 =head1 DESCRIPTION
 
- Search/Check/Update progression of Hedge/Stress/Naif on OTC and Credit files generation overnight/intraday.
+ Search/Check/Update progression of Hedge/Stress/ on OTC and Credit files generation overnight/intraday.
 
 =head1 OPTIONS
 
@@ -120,7 +121,7 @@ main.pl -f config.cfg [Options]
 
 =item B<--loglevel>
 
-	Log Level to apply to this program.
+	Log Level to apply to this program (FATAL|WARN|OFF|INFO|DEBUG|ERROR|ALL|TRACE).
 
 =item B<--help | -h >
 
