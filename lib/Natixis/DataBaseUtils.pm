@@ -14,55 +14,56 @@ BEGIN {
 	our $VERSION = 2.0;
 	use base qw(Exporter);
 	our @EXPORT_OK = qw(Connect QueryAllRecords Disconnect Commit);
-	use constant ERROR => 0;
+	use constant FALSE => 0;
 	use constant TRUE  => 1;
 }
 
 sub new {
-	my $class = shift;
-
-	my (
-		$Techno,   $Driver,  $DataBase, $Host, $Login,
-		$Password, $Options, $LogLevel, $logger
-	) = @_;
+	my ( $class, %args ) = @_;
 
 	my $self = bless {
-		Techno   => $Techno,
-		Driver   => $Driver,
-		DataBase => $DataBase,
-		Host     => $Host,
-		Login    => $Login,
-		Password => $Password,
-		Options  => $Options,
-		LogLevel => $LogLevel
+		Techno   => $args{Techno},
+		Driver   => $args{Driver},
+		DataBase => $args{DataBase},
+		Instance => $args{Instance},
+		Host     => $args{Host},
+		Login    => $args{Login},
+		Password => $args{Password},
+		Options  => $args{Options},
+		LogLevel => $args{LogLevel}
 	}, $class;
 
 	if ( defined $self->{LogLevel}
-		&& $self->{LogLevel} =~ /FATAL|WARN|OFF|INFO|DEBUG|ERROR|ALL|TRACE/i )
+		&& $self->{LogLevel} =~ /FATAL|WARN|OFF|INFO|DEBUG|FALSE|ALL|TRACE/i )
 	{
 		my $Level = Log::Log4perl::Level::to_priority( $self->{LogLevel} );
 		Log::Log4perl->easy_init($Level);
 	}
 	else {
-		Log::Log4perl->easy_init($INFO);
+		Log::Log4perl->easy_init($DEBUG);
 	}
 
-	unless ( $self->initialize() ) {
+	unless ( $self->_initialize() ) {
 		$self = undef;
-		return (ERROR);
+		return (FALSE);
 	}
 
 	return $self;
 }
 
-sub BuildConString {
+sub _buildConString {
 	my $self   = shift;
 	my $logger = Log::Log4perl->get_logger();
 
 	if ( $self->{'Driver'} =~ /^ODBC/i ) {
 		$logger->info("Using ODBC ...");
+		if ( $self->{Techno} =~ /^SYBASE/i ) {
+			$self->{'ConString'} = "dbi:ODBC:$self->{Instance}";
+		}
+		else {
+			$self->{'ConString'} = "dbi:ODBC:$self->{'DataBase'}";
+		}
 
-		$self->{'ConString'} = "dbi:ODBC:$self->{'DataBase'}";
 		$self->{'ConString'} = trim( $self->{'ConString'} );
 
 		$logger->info("ConString Build : $self->{'ConString'}");
@@ -70,53 +71,67 @@ sub BuildConString {
 	elsif ( $self->{'Driver'} =~ /^DRIVER/i ) {
 		$logger->info("Using direct DBI driver ....");
 
-		$self->{'Techno'} = lc( $self->{'Techno'} );
-
 		$self->{'ConString'} =
-		  "DBI:$self->{'Techno'}:database=$self->{'DataBase'}";
+		  "dbi:$self->{'Techno'}:database=$self->{'DataBase'}";
+		if ( $self->{Techno} =~ /^SYBASE/i ) {
+			$self->{'ConString'} =
+"dbi:$self->{'Techno'}:database=$self->{'DataBase'}:server=$self->{Instance}";
+		}
 		$self->{'ConString'} = trim( $self->{'ConString'} );
+		$logger->info("ConString Build : $self->{'ConString'}");
 	}
 	else {
 		$logger->info(
 "Driver => $self->{'Driver'} is not yet available (use DRIVER/ODBC)."
 		);
 		$self->{'Blocked'} = 1;
-		return (ERROR);
+		return (FALSE);
 	}
 	return (TRUE);
 }
 
-sub initialize {
+sub _initialize {
 	my $self   = shift;
 	my $logger = Log::Log4perl->get_logger();
 
-	unless ( defined $self->{'Techno'} ) {
+	unless ( defined $self->{Techno} ) {
 		$self->{'Blocked'} = 1;
 		$logger->error(
 			"Missing parameter Techno, (should be sybase,mysql,sqlserver, ...)"
 		);
 		$logger->debug("End of initialize function.");
-		return (ERROR);
+		return (FALSE);
 	}
 
-	unless ( defined $self->{'Driver'} ) {
+	unless ( defined $self->{Driver} ) {
 		$self->{'Blocked'} = 1;
 		$logger->error("Missing parameter Driver, (should be ODBC,DRIVER ...)");
 		$logger->debug("End of initialize function.");
-		return (ERROR);
+		return (FALSE);
 	}
 
-	unless ( defined $self->{'DataBase'} ) {
+	unless ( $self->{Techno} =~ /SYBASE/i && defined $self->{Instance} ) {
 		$self->{'Blocked'} = 1;
+		$logger->error("Error initializing modules with following elements :");
+		$logger->error("Techno : $self->{Techno}");
+		$logger->error("Driver : $self->{driver}");
 		$logger->error(
-			"Missing parameter DataBase (should be SX_TP_FR, SP_TP_FR2 ...");
+"Instance parameter should be defined. Please have a look at the documentation of this module."
+		);
 		$logger->debug("End of initialize function.");
-		return (ERROR);
+		return (FALSE);
 	}
 
-	unless ( $self->BuildConString() ) {
+	unless ( defined $self->{DataBase} ) {
 		$self->{'Blocked'} = 1;
-		return (ERROR);
+		$logger->error("Missing parameter DataBase (should be msbdb_sumotc");
+		$logger->debug("End of initialize function.");
+		return (FALSE);
+	}
+
+	unless ( $self->_buildConString() ) {
+		$self->{'Blocked'} = 1;
+		return (FALSE);
 	}
 
 	$self->{'Blocked'} = 0;
@@ -129,7 +144,7 @@ sub Connect {
 
 	if ( not exists $self->{'Blocked'} || $self->{'Blocked'} == 1 ) {
 		$logger->warn("Can't connect to $self->{'DataBase'} ...");
-		return (ERROR);
+		return (FALSE);
 	}
 
 	if ( $self->{'Driver'} =~ /^ODBC/i ) {
@@ -161,7 +176,7 @@ sub Connect {
 		);
 		$logger->error("Following error catched : $DBI::errstr");
 		$logger->debug("End of SybaseConnect function.");
-		return (ERROR);
+		return (FALSE);
 	}
 
 	$self->{'Blocked'} = 0;
@@ -180,7 +195,7 @@ sub QueryAllRecords {
 
 	if ( not defined $self->{'Blocked'} || $self->{'Blocked'} == 1 ) {
 		$logger->warn("Not connected to $self->{'DataBase'} ...");
-		return (ERROR);
+		return (FALSE);
 	}
 
 	my $Sth = $self->{'DBHandle'}->prepare($SqlRequest);
@@ -189,7 +204,7 @@ sub QueryAllRecords {
 		$logger->error("Failed to prepare Following request : $SqlRequest");
 		$logger->error("Following error catched : $self->{DBHandle}->errstr");
 		$logger->debug("End of QueryAllRecords function.");
-		return (ERROR);
+		return (FALSE);
 	}
 
 	$logger->info("Following request is now prepared : $SqlRequest");
@@ -202,7 +217,7 @@ sub QueryAllRecords {
 			$logger->error("Failed to execute the request");
 			$logger->error("Following error catched : $Sth->errstr");
 			$logger->debug("End of QueryAllRecords function.");
-			return (ERROR);
+			return (FALSE);
 		}
 		$logger->info("Request successfully executed.");
 	}
@@ -211,7 +226,7 @@ sub QueryAllRecords {
 			$logger->error("Failed to execute the request");
 			$logger->error("Following error catched : $Sth->errstr");
 			$logger->debug("End of QueryAllRecords function.");
-			return (ERROR);
+			return (FALSE);
 		}
 		$logger->info("Request successfully executed.");
 	}
@@ -224,7 +239,7 @@ sub QueryAllRecords {
 			"No row returned or issue encountered during fetching ...");
 		$logger->error("Following error catched : $Sth->err");
 		$logger->debug("End of QueryAllRecords function.");
-		return (ERROR);
+		return (FALSE);
 	}
 	my $NbRows = scalar( keys %$Rows );
 	$logger->info("Request sucessfully executed, returned $NbRows row(s).");
@@ -238,7 +253,7 @@ sub Commit {
 
 	if ( not defined $self->{'Blocked'} || $self->{'Blocked'} == 1 ) {
 		$logger->error("Not connected to $self->{'DataBase'} ...");
-		return (ERROR);
+		return (FALSE);
 	}
 
 	my $Res = $self->{'DBHandle'}->commit;
@@ -253,11 +268,11 @@ sub Commit {
 		unless ($Rol) {
 			$logger->warn("Rollback failed ...");
 			$logger->debug("End of Commit function.");
-			return (ERROR);
+			return (FALSE);
 		}
 		$logger->warn("Transaction Rollbacked.");
 		$logger->debug("End of Commit function.");
-		return (ERROR);
+		return (FALSE);
 	}
 	$logger->info("Commit Successfull.");
 	$logger->debug("End of Commit function.");
@@ -270,7 +285,7 @@ sub Disconnect {
 
 	if ( not defined $self->{'Blocked'} || $self->{'Blocked'} == 1 ) {
 		$logger->error("Not connected to $self->{'DataBase'} ...");
-		return (ERROR);
+		return (FALSE);
 	}
 
 	my $Dis = $self->{'DBHandle'}->disconnect;
@@ -279,7 +294,7 @@ sub Disconnect {
 		$logger->warn("Can't disconnect now.");
 		$logger->warn("Following error catched :  $self->{'DBHandle'}->errstr");
 		$logger->debug("End of Disconnect function.");
-		return (ERROR);
+		return (FALSE);
 	}
 
 	$logger->info("Disconnected from $self->{'DataBase'}.");

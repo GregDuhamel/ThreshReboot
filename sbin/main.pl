@@ -7,7 +7,8 @@ use Getopt::Long;
 use Pod::Usage;
 use Data::Dumper;
 use lib '/home/gduhamel/Projet/Perl/ThreshReboot/lib/';
-use Natixis::GenericFunction;
+use Natixis::GenericFunction qw(IsValidFile ReadYamlFile);
+use Natixis::DataBaseUtils;
 
 BEGIN {
 	use constant FALSE => 0;
@@ -61,6 +62,7 @@ sub ParsingArguments {
 		$logger->info("LogLevel $Options->{LogLevel} defined for this run.");
 	}
 	else {
+		$Options->{LogLevel} = "INFO";
 		Log::Log4perl->easy_init($INFO);
 		$logger = Log::Log4perl->get_logger();
 		$logger->info("Default LogLevel INFO defined for this run.");
@@ -93,7 +95,45 @@ sub Main {
 		exit(1);
 	}
 	$logger->info("YAML file : $Options->{Configuration} parsed successfully.");
-	$logger->debug( Data::Dumper::Dumper( $YAML->[0] ) );
+
+	if ( defined $YAML->[0]->{'srm-database'} ) {
+		$logger->debug( Data::Dumper::Dumper( $YAML->[0]->{'srm-database'} ) );
+	}
+	else {
+		$logger->error(
+"Can't find srm-database information in $Options->{Configuration} file."
+		);
+	}
+
+	$logger->info("Initializing database ...");
+	my $db = Natixis::DataBaseUtils->new(
+		Techno   => 'Sybase',
+		Driver   => 'ODBC',
+		DataBase => $YAML->[0]->{'srm-database'}->{database},
+		Instance => $YAML->[0]->{'srm-database'}->{instance},
+		Login    => "LOGIN",
+		Password => "PASSWORD",
+		LogLevel => $Options->{LogLevel}
+	);
+
+	unless ($db) {
+		$logger->error("Can't initialize Database. Please have a look.");
+		exit(1);
+	}
+	else {
+		$logger->info("Database successfuly initialized.");
+	}
+
+	$logger->info("Trying to acquire a connection ...");
+
+	unless ( $db->Connect() ) {
+		$logger->error("Connection failed. Please have a look.");
+		exit(1);
+	}
+	else {
+		$logger->info("Connected to database.");
+	}
+
 	exit(0);
 }
 
@@ -109,7 +149,7 @@ main.pl -f config.cfg [Options]
 
 =head1 DESCRIPTION
 
- Search/Check/Update progression of Hedge/Stress/ on OTC and Credit files generation overnight/intraday.
+ Search/Check/Update progression of Hedge/Stress/PnL on OTC and Credit files generation overnight/intraday.
 
 =head1 OPTIONS
 
